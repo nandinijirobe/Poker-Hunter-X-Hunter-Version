@@ -16,12 +16,14 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import javax.print.attribute.standard.Media;
+import java.io.FileInputStream;
 import java.util.HashMap;
 
 
@@ -35,7 +37,18 @@ public class GUIClient extends Application {
     Button playButton;
     Button optionsButton1;
     Text gameTitle;
-    String welcomeBackgroundLink = "C:\\Users\\Nandini Jirobe\\IdeaProjects\\Poker-Game-Client\\JavaFX_MavenTemplate_VS1\\src\\main\\java\\hisokaStart1.jpg";
+    String welcomeBackgroundLink = "src/main/java/hisokaStart1.jpg";
+
+    // Gameplay
+    Button dealButton;
+    Button foldButton;
+    Button submitButton;
+    Button optionButton2;
+    Text gameInfo, totalWinningInfo;
+    Text pairPlusNum, anteWageNum, playWagerNum;
+
+    Rectangle dealerCard1, dealerCard2, dealerCard3;
+    Rectangle playerCard1, playerCard2, playerCard3;
 
     // menu components
     Button freshStartButton;
@@ -92,6 +105,14 @@ public class GUIClient extends Application {
         portNumText.setPromptText("ENTER PORT NUMBER");
         playButton = new Button ("PLAY");
         optionsButton1 = new Button("OPTIONS");
+
+        // initialize gameplay components
+        optionButton2 = new Button("OPTIONS");
+        optionButton2.setStyle("-fx-background-color: #E6E6E6; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
+        optionButton2.setOnAction(e -> {
+            primaryStage.setScene(sceneMap.get("menuScreen"));
+        });
+
 
         // initialize menu components
         freshStartButton = new Button ("Fresh Start");
@@ -165,13 +186,13 @@ public class GUIClient extends Application {
         // Put scenes into a hashmap
         sceneMap = new HashMap<>();
         sceneMap.put("welcomeScreen", createWelcomeScreen());
+        sceneMap.put("gameplay",createGameScene());
         sceneMap.put("endScreen", createEndScreen());
         sceneMap.put("newLookScreen", createNewLookScreen());
         sceneMap.put("menuScreen", createMenuScreen());
-        //TODO: ADD GAME SCREEN TO MAP
 
         // set screen
-        primaryStage.setScene(sceneMap.get("endScreen"));
+        primaryStage.setScene(sceneMap.get("newLookScreen"));
         primaryStage.show();
 
     }
@@ -180,12 +201,16 @@ public class GUIClient extends Application {
         welcomePane = new BorderPane();
 
         // set up background
-        welcomePane.setBackground(new Background(new BackgroundImage(
-                new Image(welcomeBackgroundLink),
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundPosition.CENTER,
-                new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false))));
+        try {
+            welcomePane.setBackground(new Background(new BackgroundImage(
+                    new Image(new FileInputStream("src/main/java/hisokaStart1.jpg")),
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundPosition.CENTER,
+                    new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false))));
+        } catch (Exception e) {
+            System.out.println("Unable to load the background image for the intro scene");
+        };
 
         // arrange components
         HBox justOneMenuBtn = new HBox(optionsButton1);
@@ -203,26 +228,64 @@ public class GUIClient extends Application {
 
         return new Scene(welcomePane, 1400, 790);
     }
+
+    Scene createGameScene(){
+        BorderPane pane = new BorderPane();
+        pane.setStyle("-fx-background-color: #4EBFC3");
+
+
+        Rectangle card = createCard("src/main/resources/clubs-6.png");
+        Rectangle card1 = createCard("src/main/resources/clubs-9.png");
+
+        HBox paneCenter = new HBox(card, card1);
+        HBox paneTop = new HBox(optionButton2);
+        pane.setCenter(paneCenter);
+        pane.setTop(paneTop);
+
+        return new Scene(pane, 1400, 750);
+    }
+
+    Rectangle createCard(String cardImagePath) {
+        Rectangle card = new Rectangle(0, 0, 100, 140);
+        card.setArcWidth(20);
+        card.setArcHeight(20);
+
+        try {
+            ImagePattern pattern = new ImagePattern(new Image(new FileInputStream(cardImagePath)), 0, 0, 100, 140, false);  // position x, position y, width, height
+            card.setFill(pattern);
+            card.setStyle("-fx-background-radius: 5;");
+        } catch (Exception e) {
+            System.out.println("Image unable to get");
+        };
+
+        return card;
+    }
+
     Scene createEndScreen(){
         endPane = new BorderPane();
 
         // set up background
         Image hisoka1;
-        if (wonCurrentGame) {
-            hisoka1 = new Image("C:\\Users\\Nandini Jirobe\\IdeaProjects\\Poker-Game-Client\\JavaFX_MavenTemplate_VS1\\src\\main\\java\\hisokaEnd1.jpg");
-            endingText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #010101; -fx-text-alignment: center;");
-            endTotalWinningsText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #010101; -fx-text-alignment: center;");
-        } else {
-            hisoka1 = new Image("C:\\Users\\Nandini Jirobe\\IdeaProjects\\Poker-Game-Client\\JavaFX_MavenTemplate_VS1\\src\\main\\java\\hisokaEnd2.jpg");
-            endingText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #E6E6E6; -fx-text-alignment: center;");
-            endTotalWinningsText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #E6E6E6; -fx-text-alignment: center;");
-        }
+        try {
+            if (wonCurrentGame) {
+                hisoka1 = new Image(new FileInputStream("src/main/java/hisokaEnd1.jpg"));
+                endingText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #010101; -fx-text-alignment: center;");
+                endTotalWinningsText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #010101; -fx-text-alignment: center;");
+            } else {
+                hisoka1 = new Image(new FileInputStream("src/main/java/hisokaEnd2.jpg"));
+                endingText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #E6E6E6; -fx-text-alignment: center;");
+                endTotalWinningsText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #E6E6E6; -fx-text-alignment: center;");
+            }
 
-        endPane.setBackground(new Background(new BackgroundImage(hisoka1,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundPosition.CENTER,
-                new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false))));
+
+            endPane.setBackground(new Background(new BackgroundImage(hisoka1,
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundPosition.CENTER,
+                    new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false))));
+        } catch (Exception e) {
+            System.out.println("Unable to load the background image for the ending scene");
+        };
 
         // assemble components
         HBox contORexit = new HBox(endContinueButton, endExitButton);
@@ -242,25 +305,29 @@ public class GUIClient extends Application {
     Scene createNewLookScreen(){
         BorderPane pane = new BorderPane();
 
-        // set up background
-        Image newLookBg = new Image("C:\\Users\\Nandini Jirobe\\IdeaProjects\\Poker-Game-Client\\JavaFX_MavenTemplate_VS1\\src\\main\\java\\newLookBg.jpg");
-        Image blueModePic = new Image("C:\\Users\\Nandini Jirobe\\IdeaProjects\\Poker-Game-Client\\JavaFX_MavenTemplate_VS1\\src\\main\\java\\blueMode.jpg");
-        Image pinkModePic= new Image("C:\\Users\\Nandini Jirobe\\IdeaProjects\\Poker-Game-Client\\JavaFX_MavenTemplate_VS1\\src\\main\\java\\pinkMode.jpg");
-        pane.setBackground(new Background(new BackgroundImage(newLookBg,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundPosition.CENTER,
-                new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false))));
+        try {
+            // set up background
+            Image newLookBg = new Image(new FileInputStream("src/main/java/newLookBg.jpg"));
+            Image blueModePic = new Image(new FileInputStream("src/main/java/blueMode.jpg"));
+            Image pinkModePic = new Image(new FileInputStream("src/main/java/pinkMode.jpg"));
+            pane.setBackground(new Background(new BackgroundImage(newLookBg,
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundPosition.CENTER,
+                    new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false))));
 
-        // add images for buttons' background
-        ImageView pinkView = new ImageView(pinkModePic);
-        ImageView blueView = new ImageView(blueModePic);
-        pinkView.setPreserveRatio(true);
-        pinkView.setFitHeight(300);
-        blueView.setPreserveRatio(true);
-        blueView.setFitHeight(300);
-        pinkModeButton.setGraphic(pinkView);
-        blueModeButton.setGraphic(blueView);
+            // add images for buttons' background
+            ImageView pinkView = new ImageView(pinkModePic);
+            ImageView blueView = new ImageView(blueModePic);
+            pinkView.setPreserveRatio(true);
+            pinkView.setFitHeight(300);
+            blueView.setPreserveRatio(true);
+            blueView.setFitHeight(300);
+            pinkModeButton.setGraphic(pinkView);
+            blueModeButton.setGraphic(blueView);
+        } catch (Exception e) {
+            System.out.println("Unable to load images for the look choices");
+        }
 
         // arrange components
 
@@ -310,21 +377,25 @@ public class GUIClient extends Application {
         blueModeTurnedOn= ((blueModeTurnedOn == false) ? true : false);
 
         if (blueModeTurnedOn) {
-            welcomeBackgroundLink = "C:\\Users\\Nandini Jirobe\\IdeaProjects\\Poker-Game-Client\\JavaFX_MavenTemplate_VS1\\src\\main\\java\\hisokaStart1.jpg";
+            welcomeBackgroundLink = "src/main/java/hisokaStart1.jpg";
             blueModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#A2C255;-fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
             pinkModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#E6E6E6; -fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
         } else {
-            welcomeBackgroundLink = "C:\\Users\\Nandini Jirobe\\IdeaProjects\\Poker-Game-Client\\JavaFX_MavenTemplate_VS1\\src\\main\\java\\hisokaStart2.jpg";
+            welcomeBackgroundLink = "src/main/java/hisokaStart2.jpg";
             blueModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#E6E6E6;-fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
             pinkModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#A2C255; -fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
         }
 
-        welcomePane.setBackground(new Background(new BackgroundImage(
-                new Image(welcomeBackgroundLink),
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundPosition.CENTER,
-                new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false))));
+        try {
+            welcomePane.setBackground(new Background(new BackgroundImage(
+                    new Image(new FileInputStream(welcomeBackgroundLink)),
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundPosition.CENTER,
+                    new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false))));
+        } catch (Exception e) {
+            System.out.println("Unable to change the background image to the new look");
+        };
 
 
         // update welcome components
