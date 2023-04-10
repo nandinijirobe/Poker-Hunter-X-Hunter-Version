@@ -12,20 +12,26 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.util.converter.IntegerStringConverter;
 
 import javax.print.attribute.standard.Media;
 import java.io.FileInputStream;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.HashMap;
-
+import java.util.regex.Pattern;
 
 
 public class GUIClient extends Application {
@@ -44,11 +50,16 @@ public class GUIClient extends Application {
     Button foldButton;
     Button submitButton;
     Button optionButton2;
-    Text gameInfo, totalWinningInfo;
-    Text pairPlusNum, anteWageNum, playWagerNum;
+    Text totalWinningInfo;
+    ListView<String> gameInfo;
+    TextField pairPlusNum, anteWageNum, playWagerNum;
 
-    Rectangle dealerCard1, dealerCard2, dealerCard3;
-    Rectangle playerCard1, playerCard2, playerCard3;
+    private String dealerCardImagePath1 = "src/main/resources/clubs-2.png";
+    private String dealerCardImagePath2 = "src/main/resources/clubs-3.png";
+    private String dealerCardImagePath3 = "src/main/resources/clubs-4.png";
+    private String playerCardImagePath1 = "src/main/resources/clubs-10.png";
+    private String playerCardImagePath2 = "src/main/resources/clubs-12.png";
+    private String playerCardImagePath3 = "src/main/resources/clubs-14.png";
 
     // menu components
     Button freshStartButton;
@@ -107,11 +118,24 @@ public class GUIClient extends Application {
         optionsButton1 = new Button("OPTIONS");
 
         // initialize gameplay components
+
         optionButton2 = new Button("OPTIONS");
-        optionButton2.setStyle("-fx-background-color: #E6E6E6; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
-        optionButton2.setOnAction(e -> {
-            primaryStage.setScene(sceneMap.get("menuScreen"));
-        });
+        totalWinningInfo = new Text("Total Winnings:\nXXXXX");
+        pairPlusNum = new TextField();
+        anteWageNum = new TextField();
+        playWagerNum = new TextField();
+        gameInfo = new ListView<>();
+        dealButton = new Button("DEAL");
+        foldButton = new Button("FOLD");
+        submitButton = new Button("SUBMIT");
+
+        // Textfield only accept integers
+        TextFormatter<Integer> formatter1 = new TextFormatter<>(new IntegerStringConverter(), 1, c -> Pattern.matches("\\d*", c.getText()) ? c : null );  // copied code from https://stackoverflow.com/a/36749659
+        TextFormatter<Integer> formatter2 = new TextFormatter<>(new IntegerStringConverter(), 1, c -> Pattern.matches("\\d*", c.getText()) ? c : null );
+        TextFormatter<Integer> formatter3 = new TextFormatter<>(new IntegerStringConverter(), 1, c -> Pattern.matches("\\d*", c.getText()) ? c : null );
+        pairPlusNum.setTextFormatter(formatter1);
+        anteWageNum.setTextFormatter(formatter2);
+        playWagerNum.setTextFormatter(formatter3);
 
 
         // initialize menu components
@@ -141,6 +165,18 @@ public class GUIClient extends Application {
         playButton.setStyle("-fx-background-color: #3D9295; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
         optionsButton1.setStyle("-fx-background-color: #E6E6E6; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
 
+        // style the game components
+        optionButton2.setStyle("-fx-background-color: #E6E6E6; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
+        dealButton.setStyle("-fx-background-color: #A2C255; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 200px;  -fx-font: bold 22 Calibri; ");
+        foldButton.setStyle("-fx-background-color: #E64D69; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 200px;  -fx-font: bold 22 Calibri;");
+        submitButton.setStyle("-fx-background-color: #DA0063; -fx-text-fill: #FFFFFF; -fx-pref-height: 13px; -fx-pref-width: 200px;  -fx-font: bold 18 Calibri;");
+        gameInfo.setStyle("-fx-background-color: #FDFB97; -fx-min-height: 250px; -fx-max-height: 250px; -fx-background-radius: 5;");
+        totalWinningInfo.setStyle("-fx-font: bold 26 Calibri;");
+        totalWinningInfo.setTextAlignment(TextAlignment.CENTER);
+        pairPlusNum.setAlignment(Pos.CENTER);
+        anteWageNum.setAlignment(Pos.CENTER);
+        playWagerNum.setAlignment(Pos.CENTER);
+
         // style menu components
         optionsTitle.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 100 Garamond;");
         freshStartButton.setStyle("-fx-background-color: #1F405A; -fx-text-fill: #E6E6E6; -fx-pref-height: 20px; -fx-pref-width: 450px;  -fx-font: bold 24 Calibri; ");
@@ -163,13 +199,14 @@ public class GUIClient extends Application {
 
         // welcome screen event handlers
         // TODO: WRITE PLAY GAME EVENT HANDLER
+        playButton.setOnAction(e->primaryStage.setScene(sceneMap.get("gameplay")));
         optionsButton1.setOnAction(e->primaryStage.setScene(sceneMap.get("menuScreen")));
+        newLookButton.setOnAction(e->primaryStage.setScene(sceneMap.get("newLookScreen")));
         closeOptionsButton1.setOnAction(e->primaryStage.setScene(sceneMap.get("welcomeScreen")));
 
         // menu screen event handlers
         //TODO:WRITE FRESH START EVENT HANDLER
         exitGameButton.setOnAction(e -> Platform.exit());
-        newLookButton.setOnAction(e->primaryStage.setScene(sceneMap.get("newLookScreen")));
 
         // new-look screen event handlers
         closeNewLookButton.setOnAction(e->primaryStage.setScene(sceneMap.get("menuScreen")));
@@ -181,6 +218,8 @@ public class GUIClient extends Application {
         endExitButton.setOnAction(e -> Platform.exit());
 
         // TODO: ADD GAME SCREEN EVENT HANDLERS
+        // TODO: Write the deal, fold, and submit event handlers
+        optionButton2.setOnAction(e->primaryStage.setScene(sceneMap.get("menuScreen")));
 
 
         // Put scenes into a hashmap
@@ -192,7 +231,7 @@ public class GUIClient extends Application {
         sceneMap.put("menuScreen", createMenuScreen());
 
         // set screen
-        primaryStage.setScene(sceneMap.get("newLookScreen"));
+        primaryStage.setScene(sceneMap.get("gameplay"));
         primaryStage.show();
 
     }
@@ -231,14 +270,86 @@ public class GUIClient extends Application {
 
     Scene createGameScene(){
         BorderPane pane = new BorderPane();
-        pane.setStyle("-fx-background-color: #4EBFC3");
+        pane.setStyle("-fx-background-color: #4EBFC3;");  // TODO: Change the hexcode such that the new look can be applied
 
+        //Right-side
+        // winning total
+        StackPane totalWinningInfoFlow = new StackPane(totalWinningInfo);
+        totalWinningInfoFlow.setStyle("-fx-background-color: #E6E6E6; -fx-min-width: 500; -fx-min-height: 85; -fx-background-radius: 5;");
 
-        Rectangle card = createCard("src/main/resources/clubs-6.png");
-        Rectangle card1 = createCard("src/main/resources/clubs-9.png");
+        // Bet
+        Text betTitle = new Text("MAKE YOUR BET!");
+        betTitle.setStyle("-fx-font: bold 34 Calibri;");
+        Text betDescription = new Text("Make your bet wagers between 5 and 25 bucks.\nEnter 0 if you do not want to bet on the pair plus.");
+        betDescription.setStyle("-fx-font: 16 Calibri;");
 
-        HBox paneCenter = new HBox(card, card1);
+        Text pairPlusTitle = new Text("PAIR PLUS");
+        pairPlusTitle.setStyle("-fx-font: bold 16 Calibri;");
+        VBox pairPlusBet = new VBox(2, pairPlusTitle, pairPlusNum);
+        pairPlusBet.setAlignment(Pos.CENTER);
+
+        Text anteTitle = new Text("ANTE");
+        anteTitle.setStyle("-fx-font: bold 16 Calibri;");
+        VBox anteWageBet = new VBox(2, anteTitle, anteWageNum);
+        anteWageBet.setAlignment(Pos.CENTER);
+
+        Text playTitle = new Text("PLAY");
+        playTitle.setStyle("-fx-font: bold 16 Calibri;");
+        VBox playWageBet = new VBox(2, playTitle, playWagerNum);
+        playWageBet.setAlignment(Pos.CENTER);
+
+        HBox betTextFields = new HBox(8, pairPlusBet, anteWageBet, playWageBet);
+        betTextFields.setAlignment(Pos.CENTER);
+        VBox betBox = new VBox(10, betTitle, betDescription, betTextFields, submitButton);
+        betBox.setStyle("-fx-background-color:#FFB1BF; -fx-background-radius: 5;");  // TODO: Change the hexcode
+        betBox.setAlignment(Pos.CENTER);
+        betBox.setPadding(new Insets(10));
+
+        VBox paneRight = new VBox(20, totalWinningInfoFlow, betBox, gameInfo);
+        paneRight.setAlignment(Pos.CENTER);
+
+        // Dealer Hand
+        Text dealerTitle = new Text("DEALER");
+        dealerTitle.setStyle("-fx-font: bold 18 Calibri;");
+        Rectangle dealerCard1 = createCard(dealerCardImagePath1);
+        Rectangle dealerCard2 = createCard(dealerCardImagePath2);
+        Rectangle dealerCard3 = createCard(dealerCardImagePath3);
+
+        // Player Hand
+        Text playerTitle = new Text("PLAYER (YOU)");
+        playerTitle.setStyle("-fx-font: bold 18 Calibri;");
+        Rectangle playerCard1 = createCard(playerCardImagePath1);
+        Rectangle playerCard2 = createCard(playerCardImagePath2);
+        Rectangle playerCard3 = createCard(playerCardImagePath3);
+
+        // Deck of Card
+        Rectangle deckCard = createCard(playerCardImagePath3);  // TODO: Need to create the back of the card. This is a placeholder.
+
+        HBox dealerHand = new HBox(15, dealerCard1, dealerCard2, dealerCard3);
+        dealerHand.setAlignment(Pos.CENTER);
+
+        VBox dealer = new VBox(15, dealerTitle, dealerHand);
+        dealer.setAlignment(Pos.CENTER);
+
+        HBox playerHand = new HBox(15, playerCard1, playerCard2, playerCard3);
+        playerHand.setAlignment(Pos.CENTER);
+
+        VBox player = new VBox(15, playerHand, playerTitle);
+        player.setAlignment(Pos.CENTER);
+
+        HBox foldOrDeal = new HBox(20, dealButton, foldButton);
+        foldOrDeal.setAlignment(Pos.CENTER);
+
         HBox paneTop = new HBox(optionButton2);
+        VBox gameBox = new VBox(25, dealer, foldOrDeal, player);
+        HBox paneCenter = new HBox(70, deckCard, gameBox, paneRight);
+
+        HBox.setMargin(optionButton2, new Insets(20));
+        gameBox.setAlignment(Pos.CENTER);
+        paneTop.setAlignment(Pos.TOP_RIGHT);
+        paneCenter.setAlignment(Pos.CENTER);
+
+
         pane.setCenter(paneCenter);
         pane.setTop(paneTop);
 
@@ -246,12 +357,12 @@ public class GUIClient extends Application {
     }
 
     Rectangle createCard(String cardImagePath) {
-        Rectangle card = new Rectangle(0, 0, 100, 140);
+        Rectangle card = new Rectangle(0, 0, 178, 250);
         card.setArcWidth(20);
         card.setArcHeight(20);
 
         try {
-            ImagePattern pattern = new ImagePattern(new Image(new FileInputStream(cardImagePath)), 0, 0, 100, 140, false);  // position x, position y, width, height
+            ImagePattern pattern = new ImagePattern(new Image(new FileInputStream(cardImagePath)), 0, 0, 178, 250, false);  // position x, position y, width, height
             card.setFill(pattern);
             card.setStyle("-fx-background-radius: 5;");
         } catch (Exception e) {
