@@ -7,7 +7,6 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="FXTemplate" />
-        <module name="Poker-Game-Client" />
       </profile>
     </annotationProcessing>
   </component>
