@@ -26,21 +26,21 @@ import java.util.regex.Pattern;
 
 public class GUIClient extends Application {
     /*
-    * light-blue: optionsButtons, ipAddressTextBG, portNumberTextBG, totalWinningsBG
-    * hisoka-white: title, playButtonText
-    * dark-blue: playbutton
-    * light-pink: betBox
-    * mid-blue: gameplay background
-    *  *
+     * light-blue: optionsButtons, ipAddressTextBG, portNumberTextBG, totalWinningsBG
+     * hisoka-white: title, playButtonText
+     * dark-blue: playbutton
+     * light-pink: betBox
+     * mid-blue: gameplay background
+     *  *
 
      */
     final String[] blueTheme = new String[]{"#B8DADB", "#E6E6E6", "#40999D", "#FFB1BF", "#4EBFC3"};
 
     /* light-pink: optionsButtons, ipAddressTextBG, portNumberTextBG, totalWinningsBG
-    * histoka-black: title, plabutton text
-    * hisoka-hairpink:play button
-    * light-blue:bet-card
-    * mid-pink: gameplay background*/
+     * histoka-black: title, plabutton text
+     * hisoka-hairpink:play button
+     * light-blue:bet-card
+     * mid-pink: gameplay background*/
 
     final String[] pinkTheme = new String[]{"#EBDBDE", "#010101", "#E64D69", "#4EBFC3", "#FFB1BF"};
     // welcome components
@@ -50,7 +50,7 @@ public class GUIClient extends Application {
     Button playButton;
     Button optionsButton1;
     Text gameTitle;
-    String welcomeBackgroundLink = "src/main/java/hisokaStart1.jpg";
+    String welcomeBackgroundLink = "src/main/resources/Backgrounds/hisokaStart1.jpg";
     // Gameplay
     Button dealButton;
     Button foldButton;
@@ -61,6 +61,9 @@ public class GUIClient extends Application {
     ListView<String> gameInfo;
     TextField pairPlusNum, anteWageNum, playWagerNum;
     StackPane totalWinningInfoFlow;
+    Rectangle dealerCard1, dealerCard2, dealerCard3;
+    Rectangle playerCard1, playerCard2, playerCard3;
+    Rectangle deckCard;
     VBox betBox;
     // menu components
     Button freshStartButton;
@@ -82,7 +85,7 @@ public class GUIClient extends Application {
     Button pinkModeButton;
     Button closeNewLookButton;
     boolean gameHasBegun = false;
-
+    boolean havePlacedBets = false;
 
 
     // map of all scenes
@@ -95,15 +98,9 @@ public class GUIClient extends Application {
      * -------still need to add game scene colors--------------
      */
     boolean blueModeTurnedOn = true;
-    private String dealerCardImagePath1 = "src/main/resources/clubs-2.png";
-    private String dealerCardImagePath2 = "src/main/resources/clubs-3.png";
-    private String dealerCardImagePath3 = "src/main/resources/clubs-4.png";
-    private String playerCardImagePath1 = "src/main/resources/clubs-10.png";
-    private String playerCardImagePath2 = "src/main/resources/clubs-12.png";
-    private String playerCardImagePath3 = "src/main/resources/clubs-14.png";
-
     Client clientConnection;
     PokerInfo pokerInfo;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -138,10 +135,9 @@ public class GUIClient extends Application {
             // Textfield only accept integers
             TextFormatter<Integer> formatter1 = new TextFormatter<>(new IntegerStringConverter(), 1, c -> Pattern.matches("\\d*", c.getText()) ? c : null);  // copied code from https://stackoverflow.com/a/36749659
             TextFormatter<Integer> formatter2 = new TextFormatter<>(new IntegerStringConverter(), 1, c -> Pattern.matches("\\d*", c.getText()) ? c : null);
-            TextFormatter<Integer> formatter3 = new TextFormatter<>(new IntegerStringConverter(), 1, c -> Pattern.matches("\\d*", c.getText()) ? c : null);
+
             pairPlusNum.setTextFormatter(formatter1);
             anteWageNum.setTextFormatter(formatter2);
-            playWagerNum.setTextFormatter(formatter3);
 
 
             // initialize menu components
@@ -182,6 +178,7 @@ public class GUIClient extends Application {
             pairPlusNum.setAlignment(Pos.CENTER);
             anteWageNum.setAlignment(Pos.CENTER);
             playWagerNum.setAlignment(Pos.CENTER);
+            playWagerNum.setDisable(true);
 
             // style menu components
             optionsTitle.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 100 Garamond;");
@@ -208,8 +205,8 @@ public class GUIClient extends Application {
             primaryStage.setScene(sceneMap.get("gameplay"));
             gameHasBegun = true;
             System.out.println("Has game begun? " + gameHasBegun);
-            clientConnection = new Client(data->{
-                Platform.runLater(()->{
+            clientConnection = new Client(data -> {
+                Platform.runLater(() -> {
                     pokerInfo = (PokerInfo) data;
                     gameInfo.getItems().add("Server: " + pokerInfo.message);
                 });
@@ -224,7 +221,7 @@ public class GUIClient extends Application {
             } else {
                 primaryStage.setScene(sceneMap.get("welcomeScreen"));
             }
-        } );
+        });
 
         // menu screen event handlers
         //TODO:WRITE FRESH START EVENT HANDLER
@@ -241,15 +238,33 @@ public class GUIClient extends Application {
 
         // TODO: ADD GAME SCREEN EVENT HANDLERS
         // TODO: Write the deal, fold, and submit event handlers
-        submitButton.setOnAction(e->{
-            pokerInfo.message = "I have made my bets";
-            clientConnection.send(pokerInfo);
+        submitButton.setOnAction(e -> {
+            // check if the pairplus and ante bets are betweeen 5 and 25 bucks
+            int pairPlusBetVal = Integer.valueOf(pairPlusNum.getText());
+            int anteBetVal = Integer.valueOf(anteWageNum.getText());
+            if (((pairPlusBetVal >= 5 && pairPlusBetVal <= 25) || pairPlusBetVal == 0) && anteBetVal >= 5 && anteBetVal <= 25) {
+                // everything in here
+                pokerInfo.anteBet = anteBetVal;
+                pokerInfo.pairPlusBet = pairPlusBetVal;
+                pokerInfo.message = "I have made my bets";
+                havePlacedBets = true;
+                clientConnection.send(pokerInfo);
+
+                anteWageNum.setDisable(true);
+                pairPlusNum.setDisable(true);
+                submitButton.setDisable(true);
+            } else if (anteBetVal < 5 || pairPlusBetVal < 5){
+                gameInfo.getItems().add("You made one of your bets too low. Make sure it's at least $5.");
+            } else if (anteBetVal > 25 || pairPlusBetVal > 25) {
+                gameInfo.getItems().add("You made one of your bets too high. Make sure it's at most $25");
+            }
         });
-        dealButton.setOnAction(e->{
+
+        dealButton.setOnAction(e -> {
             pokerInfo.message = "I want to deal!";
             clientConnection.send(pokerInfo);
         });
-        foldButton.setOnAction(e->{
+        foldButton.setOnAction(e -> {
             pokerInfo.message = "I want to fold!";
             clientConnection.send(pokerInfo);
         });
@@ -285,7 +300,7 @@ public class GUIClient extends Application {
         // set up background
         try {
             welcomePane.setBackground(new Background(new BackgroundImage(
-                    new Image(new FileInputStream("src/main/java/hisokaStart1.jpg")),
+                    new Image(new FileInputStream("src/main/resources/Backgrounds/hisokaStart1.jpg")),
                     BackgroundRepeat.NO_REPEAT,
                     BackgroundRepeat.NO_REPEAT,
                     BackgroundPosition.CENTER,
@@ -354,19 +369,19 @@ public class GUIClient extends Application {
         // Dealer Hand
         Text dealerTitle = new Text("DEALER");
         dealerTitle.setStyle("-fx-font: bold 18 Calibri;");
-        Rectangle dealerCard1 = createCard(dealerCardImagePath1);
-        Rectangle dealerCard2 = createCard(dealerCardImagePath2);
-        Rectangle dealerCard3 = createCard(dealerCardImagePath3);
+        dealerCard1 = createCard("src/main/resources/Cards/back-card1.png");
+        dealerCard2 = createCard("src/main/resources/Cards/back-card1.png");
+        dealerCard3 = createCard("src/main/resources/Cards/back-card1.png");
 
         // Player Hand
         Text playerTitle = new Text("PLAYER (YOU)");
         playerTitle.setStyle("-fx-font: bold 18 Calibri;");
-        Rectangle playerCard1 = createCard(playerCardImagePath1);
-        Rectangle playerCard2 = createCard(playerCardImagePath2);
-        Rectangle playerCard3 = createCard(playerCardImagePath3);
+        playerCard1 = createCard("src/main/resources/Cards/back-card1.png");
+        playerCard2 = createCard("src/main/resources/Cards/back-card1.png");
+        playerCard3 = createCard("src/main/resources/Cards/back-card1.png");
 
         // Deck of Card
-        Rectangle deckCard = createCard(playerCardImagePath3);  // TODO: Need to create the back of the card. This is a placeholder.
+        deckCard = createCard("src/main/resources/Cards/back-card1.png");  // TODO: Need to create the back of the card. This is a placeholder.
 
         HBox dealerHand = new HBox(15, dealerCard1, dealerCard2, dealerCard3);
         dealerHand.setAlignment(Pos.CENTER);
@@ -416,6 +431,20 @@ public class GUIClient extends Application {
         return card;
     }
 
+    Rectangle changeCard(Rectangle card, String cardImagePath) {
+        try {
+            ImagePattern pattern = new ImagePattern(new Image(new FileInputStream(cardImagePath)), 0, 0, 178, 250, false);  // position x, position y, width, height
+            card.setFill(pattern);
+            card.setStyle("-fx-background-radius: 5;");
+        } catch (Exception e) {
+            System.out.println("Image unable to get");
+        }
+        ;
+
+        return card;
+
+    }
+
     Scene createEndScreen() {
         endPane = new BorderPane();
 
@@ -423,11 +452,11 @@ public class GUIClient extends Application {
         Image hisoka1;
         try {
             if (wonCurrentGame) {
-                hisoka1 = new Image(new FileInputStream("src/main/java/hisokaEnd1.jpg"));
+                hisoka1 = new Image(new FileInputStream("src/main/resources/Backgrounds/hisokaEnd1.jpg"));
                 endingText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #010101; -fx-text-alignment: center;");
                 endTotalWinningsText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #010101; -fx-text-alignment: center;");
             } else {
-                hisoka1 = new Image(new FileInputStream("src/main/java/hisokaEnd2.jpg"));
+                hisoka1 = new Image(new FileInputStream("src/main/resources/Backgrounds/hisokaEnd2.jpg"));
                 endingText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #E6E6E6; -fx-text-alignment: center;");
                 endTotalWinningsText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #E6E6E6; -fx-text-alignment: center;");
             }
@@ -464,9 +493,9 @@ public class GUIClient extends Application {
 
         try {
             // set up background
-            Image newLookBg = new Image(new FileInputStream("src/main/java/newLookBg.jpg"));
-            Image blueModePic = new Image(new FileInputStream("src/main/java/blueMode.jpg"));
-            Image pinkModePic = new Image(new FileInputStream("src/main/java/pinkMode.jpg"));
+            Image newLookBg = new Image(new FileInputStream("src/main/resources/Backgrounds/newLookBg.jpg"));
+            Image blueModePic = new Image(new FileInputStream("src/main/resources/NewLookButtonBGs/blueMode.jpg"));
+            Image pinkModePic = new Image(new FileInputStream("src/main/resources/NewLookButtonBGs/pinkMode.jpg"));
             pane.setBackground(new Background(new BackgroundImage(newLookBg,
                     BackgroundRepeat.NO_REPEAT,
                     BackgroundRepeat.NO_REPEAT,
@@ -535,14 +564,40 @@ public class GUIClient extends Application {
         blueModeTurnedOn = ((blueModeTurnedOn == false) ? true : false);
 
         if (blueModeTurnedOn) {
-            welcomeBackgroundLink = "src/main/java/hisokaStart1.jpg";
+            welcomeBackgroundLink = "src/main/resources/Backgrounds/hisokaStart1.jpg";
             blueModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#A2C255;-fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
             pinkModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#E6E6E6; -fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
 
+            // Change the back of the cards
+            deckCard = changeCard(deckCard, "src/main/resources/Cards/back-card1.png");
+
+            if (!havePlacedBets) {
+                playerCard1 = changeCard(playerCard1, "src/main/resources/Cards/back-card1.png");
+                playerCard2 = changeCard(playerCard2, "src/main/resources/Cards/back-card1.png");
+                playerCard3 = changeCard(playerCard3, "src/main/resources/Cards/back-card1.png");
+            }
+
+            dealerCard1 = changeCard(dealerCard1, "src/main/resources/Cards/back-card1.png");
+            dealerCard2 = changeCard(dealerCard2, "src/main/resources/Cards/back-card1.png");
+            dealerCard3 = changeCard(dealerCard3, "src/main/resources/Cards/back-card1.png");
+
         } else {
-            welcomeBackgroundLink = "src/main/java/hisokaStart2.jpg";
+            welcomeBackgroundLink = "src/main/resources/Backgrounds/hisokaStart2.jpg";
             blueModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#E6E6E6;-fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
             pinkModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#A2C255; -fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
+
+            // Change the back of the cards
+            deckCard = changeCard(deckCard, "src/main/resources/Cards/back-card2.png");
+
+            if (!havePlacedBets) {
+                playerCard1 = changeCard(playerCard1, "src/main/resources/Cards/back-card2.png");
+                playerCard2 = changeCard(playerCard2, "src/main/resources/Cards/back-card2.png");
+                playerCard3 = changeCard(playerCard3, "src/main/resources/Cards/back-card2.png");
+            }
+
+            dealerCard1 = changeCard(dealerCard1, "src/main/resources/Cards/back-card2.png");
+            dealerCard2 = changeCard(dealerCard2, "src/main/resources/Cards/back-card2.png");
+            dealerCard3 = changeCard(dealerCard3, "src/main/resources/Cards/back-card2.png");
         }
 
         try {
@@ -554,7 +609,8 @@ public class GUIClient extends Application {
                     new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false))));
         } catch (Exception e) {
             System.out.println("Unable to change the background image to the new look");
-        };
+        }
+        ;
 
 
         // update welcome components
@@ -567,9 +623,9 @@ public class GUIClient extends Application {
 
         // update end components
         endingText.setStyle("-fx-background-color: " + themeStyle[0] + "; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
-        totalWinningInfoFlow.setStyle("-fx-background-color:"+ themeStyle[0]+ ";-fx-min-width: 500; -fx-min-height: 85; -fx-background-radius: 5;");
-        betBox.setStyle("-fx-background-color:"+ themeStyle[3]+ "; -fx-background-radius: 5;");  // TODO: Change the hexcode
-        gamePane.setStyle("-fx-background-color:"+ themeStyle[4]+ ";");  // TODO: Change the hexcode such that the new look can be applied
+        totalWinningInfoFlow.setStyle("-fx-background-color:" + themeStyle[0] + ";-fx-min-width: 500; -fx-min-height: 85; -fx-background-radius: 5;");
+        betBox.setStyle("-fx-background-color:" + themeStyle[3] + "; -fx-background-radius: 5;");  // TODO: Change the hexcode
+        gamePane.setStyle("-fx-background-color:" + themeStyle[4] + ";");  // TODO: Change the hexcode such that the new look can be applied
     }
 
 
