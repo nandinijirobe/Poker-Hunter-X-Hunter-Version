@@ -25,11 +25,24 @@ import java.util.regex.Pattern;
 
 
 public class GUIClient extends Application {
+    /*
+    * light-blue: optionsButtons, ipAddressTextBG, portNumberTextBG, totalWinningsBG
+    * hisoka-white: title, playButtonText
+    * dark-blue: playbutton
+    * light-pink: betBox
+    * mid-blue: gameplay background
+    *  *
 
-    // blue, hisoka-black, hisoka-#010101
-    final String[] blueTheme = new String[]{"#B8DADB", "#E6E6E6", "#010101"};
-    // pink, hisoka-black, hisoka-#E6E6E6
-    final String[] pinkTheme = new String[]{"#BE83B1", "#010101", "#E6E6E6",};
+     */
+    final String[] blueTheme = new String[]{"#B8DADB", "#E6E6E6", "#40999D", "#FFB1BF", "#4EBFC3"};
+
+    /* light-pink: optionsButtons, ipAddressTextBG, portNumberTextBG, totalWinningsBG
+    * histoka-black: title, plabutton text
+    * hisoka-hairpink:play button
+    * light-blue:bet-card
+    * mid-pink: gameplay background*/
+
+    final String[] pinkTheme = new String[]{"#EBDBDE", "#010101", "#E64D69", "#4EBFC3", "#FFB1BF"};
     // welcome components
     BorderPane welcomePane;
     TextField ipAddressText;
@@ -44,13 +57,16 @@ public class GUIClient extends Application {
     Button submitButton;
     Button optionButton2;
     Text totalWinningInfo;
+    BorderPane gamePane;
     ListView<String> gameInfo;
     TextField pairPlusNum, anteWageNum, playWagerNum;
+    StackPane totalWinningInfoFlow;
+    VBox betBox;
     // menu components
     Button freshStartButton;
     Button newLookButton;
     Button exitGameButton;
-    Button closeOptionsButton1;
+    Button closeOptionsButton;
     Text optionsTitle;
     // end components
     BorderPane endPane;
@@ -65,6 +81,10 @@ public class GUIClient extends Application {
     Button blueModeButton;
     Button pinkModeButton;
     Button closeNewLookButton;
+    boolean gameHasBegun = false;
+
+
+
     // map of all scenes
     HashMap<String, Scene> sceneMap;
     /**
@@ -113,6 +133,7 @@ public class GUIClient extends Application {
             dealButton = new Button("DEAL");
             foldButton = new Button("FOLD");
             submitButton = new Button("SUBMIT");
+            gamePane = new BorderPane();
 
             // Textfield only accept integers
             TextFormatter<Integer> formatter1 = new TextFormatter<>(new IntegerStringConverter(), 1, c -> Pattern.matches("\\d*", c.getText()) ? c : null);  // copied code from https://stackoverflow.com/a/36749659
@@ -128,7 +149,7 @@ public class GUIClient extends Application {
             newLookButton = new Button("New Look");
             exitGameButton = new Button("Exit the Game");
             optionsTitle = new Text("OPTIONS");
-            closeOptionsButton1 = new Button("X");
+            closeOptionsButton = new Button("X");
 
             // initialize end components
             endingText = new Text("WINNER/LOSER YOU HAVE WON/LOST: $ XXXX");
@@ -145,16 +166,16 @@ public class GUIClient extends Application {
 
             // style the welcome components
             gameTitle.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 120 Garamond;");
-            ipAddressText.setStyle("-fx-background-color: #E6E6E6; -fx-fill: #010101;  -fx-alignment: center; -fx-pref-height: 20px; -fx-font: 24 Calibri;");
-            portNumText.setStyle("-fx-background-color: #E6E6E6; -fx-fill: #010101;  -fx-alignment: center; -fx-pref-height: 20px; -fx-font: 24 Calibri;");
-            playButton.setStyle("-fx-background-color: #3D9295; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
-            optionsButton1.setStyle("-fx-background-color: #E6E6E6; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
+            ipAddressText.setStyle("-fx-background-color: #B8DADB; -fx-fill: #010101;  -fx-alignment: center; -fx-pref-height: 20px; -fx-font: 24 Calibri;");
+            portNumText.setStyle("-fx-background-color: #B8DADB; -fx-fill: #010101;  -fx-alignment: center; -fx-pref-height: 20px; -fx-font: 24 Calibri;");
+            playButton.setStyle("-fx-background-color: #40999D; -fx-text-fill: #E6E6E6; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
+            optionsButton1.setStyle("-fx-background-color: #B8DADB; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
 
             // style the game components
-            optionButton2.setStyle("-fx-background-color: #E6E6E6; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
+            optionButton2.setStyle("-fx-background-color: #B8DADB; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
             dealButton.setStyle("-fx-background-color: #A2C255; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 200px;  -fx-font: bold 22 Calibri; ");
             foldButton.setStyle("-fx-background-color: #E64D69; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 200px;  -fx-font: bold 22 Calibri;");
-            submitButton.setStyle("-fx-background-color: #DA0063; -fx-text-fill: #FFFFFF; -fx-pref-height: 13px; -fx-pref-width: 200px;  -fx-font: bold 18 Calibri;");
+            submitButton.setStyle("-fx-background-color: #E64D69; -fx-text-fill: #FFFFFF; -fx-pref-height: 13px; -fx-pref-width: 200px;  -fx-font: bold 18 Calibri;");
             gameInfo.setStyle("-fx-background-color: #FDFB97; -fx-min-height: 250px; -fx-max-height: 250px; -fx-background-radius: 5;");
             totalWinningInfo.setStyle("-fx-font: bold 26 Calibri;");
             totalWinningInfo.setTextAlignment(TextAlignment.CENTER);
@@ -167,7 +188,7 @@ public class GUIClient extends Application {
             freshStartButton.setStyle("-fx-background-color: #1F405A; -fx-text-fill: #E6E6E6; -fx-pref-height: 20px; -fx-pref-width: 450px;  -fx-font: bold 24 Calibri; ");
             newLookButton.setStyle("-fx-background-color: #1F405A; -fx-text-fill: #E6E6E6; -fx-pref-height: 20px; -fx-pref-width: 450px;  -fx-font: bold 24 Calibri; ");
             exitGameButton.setStyle("-fx-background-color: #1F405A; -fx-text-fill: #E6E6E6; -fx-pref-height: 20px; -fx-pref-width: 450px;  -fx-font: bold 24 Calibri; ");
-            closeOptionsButton1.setStyle("-fx-background-color: #2D9BF0; -fx-text-fill:#E6E6E6; -fx-font: bold 50 Garamond;");
+            closeOptionsButton.setStyle("-fx-background-color: #2D9BF0; -fx-text-fill:#E6E6E6; -fx-font: bold 50 Garamond;");
 
             // style end components
             endingText.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 25 Garamond;  -fx-fill: #010101; -fx-text-alignment: center;");
@@ -185,6 +206,8 @@ public class GUIClient extends Application {
         // welcome screen event handlers
         playButton.setOnAction(e -> {
             primaryStage.setScene(sceneMap.get("gameplay"));
+            gameHasBegun = true;
+            System.out.println("Has game begun? " + gameHasBegun);
             clientConnection = new Client(data->{
                 Platform.runLater(()->{
                     pokerInfo = (PokerInfo) data;
@@ -195,7 +218,13 @@ public class GUIClient extends Application {
         });
         optionsButton1.setOnAction(e -> primaryStage.setScene(sceneMap.get("menuScreen")));
         newLookButton.setOnAction(e -> primaryStage.setScene(sceneMap.get("newLookScreen")));
-        closeOptionsButton1.setOnAction(e -> primaryStage.setScene(sceneMap.get("welcomeScreen")));
+        closeOptionsButton.setOnAction(e -> {
+            if (gameHasBegun) {
+                primaryStage.setScene(sceneMap.get("gameplay"));
+            } else {
+                primaryStage.setScene(sceneMap.get("welcomeScreen"));
+            }
+        } );
 
         // menu screen event handlers
         //TODO:WRITE FRESH START EVENT HANDLER
@@ -284,13 +313,12 @@ public class GUIClient extends Application {
     }
 
     Scene createGameScene() {
-        BorderPane pane = new BorderPane();
-        pane.setStyle("-fx-background-color: #4EBFC3;");  // TODO: Change the hexcode such that the new look can be applied
+        gamePane.setStyle("-fx-background-color: #4EBFC3;");  // TODO: Change the hexcode such that the new look can be applied
 
         //Right-side
         // winning total
-        StackPane totalWinningInfoFlow = new StackPane(totalWinningInfo);
-        totalWinningInfoFlow.setStyle("-fx-background-color: #E6E6E6; -fx-min-width: 500; -fx-min-height: 85; -fx-background-radius: 5;");
+        totalWinningInfoFlow = new StackPane(totalWinningInfo);
+        totalWinningInfoFlow.setStyle("-fx-background-color: #B8DADB; -fx-min-width: 500; -fx-min-height: 85; -fx-background-radius: 5;");
 
         // Bet
         Text betTitle = new Text("MAKE YOUR BET!");
@@ -315,7 +343,7 @@ public class GUIClient extends Application {
 
         HBox betTextFields = new HBox(8, pairPlusBet, anteWageBet, playWageBet);
         betTextFields.setAlignment(Pos.CENTER);
-        VBox betBox = new VBox(10, betTitle, betDescription, betTextFields, submitButton);
+        betBox = new VBox(10, betTitle, betDescription, betTextFields, submitButton);
         betBox.setStyle("-fx-background-color:#FFB1BF; -fx-background-radius: 5;");  // TODO: Change the hexcode
         betBox.setAlignment(Pos.CENTER);
         betBox.setPadding(new Insets(10));
@@ -365,10 +393,10 @@ public class GUIClient extends Application {
         paneCenter.setAlignment(Pos.CENTER);
 
 
-        pane.setCenter(paneCenter);
-        pane.setTop(paneTop);
+        gamePane.setCenter(paneCenter);
+        gamePane.setTop(paneTop);
 
-        return new Scene(pane, 1400, 750);
+        return new Scene(gamePane, 1400, 750);
     }
 
     Rectangle createCard(String cardImagePath) {
@@ -494,7 +522,7 @@ public class GUIClient extends Application {
         allOptions.setAlignment(Pos.CENTER);
         pane.setCenter(allOptions);
 
-        HBox justOneExitBtn = new HBox(closeOptionsButton1);
+        HBox justOneExitBtn = new HBox(closeOptionsButton);
         pane.setTop(justOneExitBtn);
         justOneExitBtn.setAlignment(Pos.TOP_RIGHT);
 
@@ -510,6 +538,7 @@ public class GUIClient extends Application {
             welcomeBackgroundLink = "src/main/java/hisokaStart1.jpg";
             blueModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#A2C255;-fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
             pinkModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#E6E6E6; -fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
+
         } else {
             welcomeBackgroundLink = "src/main/java/hisokaStart2.jpg";
             blueModeButton.setStyle("-fx-background-color:#E6E6E6; -fx-pref-height: 300px; -fx-border-width:3; -fx-border-color:#E6E6E6;-fx-pref-width: 300px;-fx-font: bold 24 Calibri;");
@@ -525,20 +554,22 @@ public class GUIClient extends Application {
                     new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false))));
         } catch (Exception e) {
             System.out.println("Unable to change the background image to the new look");
-        }
-        ;
+        };
 
 
         // update welcome components
         gameTitle.setStyle("-fx-fill:" + themeStyle[1] + ";-fx-font: bold 120 Garamond;");
-        ipAddressText.setStyle("-fx-background-color:" + themeStyle[0] + "; -fx-fill:" + themeStyle[2] + "; -fx-prompt-text-fill:" + themeStyle[2] + "; -fx-alignment: center; -fx-pref-height: 20px; -fx-font: 24 Calibri;");
-        portNumText.setStyle("-fx-background-color:" + themeStyle[0] + "; -fx-fill:" + themeStyle[2] + "; -fx-prompt-text-fill:" + themeStyle[2] + "; -fx-alignment: center; -fx-pref-height: 20px; -fx-font: 24 Calibri;");
-        playButton.setStyle("-fx-background-color:" + themeStyle[0] + "; -fx-text-fill:" + themeStyle[2] + "; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
-        optionsButton1.setStyle("-fx-background-color: " + themeStyle[0] + "; -fx-text-fill:" + themeStyle[2] + "; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
+        ipAddressText.setStyle("-fx-background-color:" + themeStyle[0] + "; -fx-fill:" + themeStyle[1] + "; -fx-alignment: center; -fx-pref-height: 20px; -fx-font: 24 Calibri;");
+        portNumText.setStyle("-fx-background-color:" + themeStyle[0] + "; -fx-fill:" + themeStyle[1] + "; -fx-alignment: center; -fx-pref-height: 20px; -fx-font: 24 Calibri;");
+        playButton.setStyle("-fx-background-color:" + themeStyle[2] + "; -fx-text-fill:" + themeStyle[1] + "; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
+        optionsButton1.setStyle("-fx-background-color: " + themeStyle[0] + "; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
+        optionButton2.setStyle("-fx-background-color: " + themeStyle[0] + "; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
 
         // update end components
-        endingText.setStyle("-fx-fill:" + themeStyle[2] + ";-fx-font: bold 25 Garamond; -fx-text-alignment: center;");
-        endTotalWinningsText.setStyle("-fx-fill:" + themeStyle[2] + ";-fx-font: bold 25 Garamond; -fx-text-alignment: center;");
+        endingText.setStyle("-fx-background-color: " + themeStyle[0] + "; -fx-text-fill: #010101; -fx-pref-height: 20px; -fx-pref-width: 150px;  -fx-font: bold 24 Calibri; ");
+        totalWinningInfoFlow.setStyle("-fx-background-color:"+ themeStyle[0]+ ";-fx-min-width: 500; -fx-min-height: 85; -fx-background-radius: 5;");
+        betBox.setStyle("-fx-background-color:"+ themeStyle[3]+ "; -fx-background-radius: 5;");  // TODO: Change the hexcode
+        gamePane.setStyle("-fx-background-color:"+ themeStyle[4]+ ";");  // TODO: Change the hexcode such that the new look can be applied
     }
 
 
