@@ -10,41 +10,38 @@ public class Client extends Thread {
 
     Socket socketClient;
     ObjectOutputStream out;
-    ObjectInputStream in;
+    ObjectInputStream in ;
     String theIPAddress;
     int thePortNumber;
-    private Consumer<Serializable> callback;
+    private Consumer < Serializable > callback;
 
-    Client(Consumer<Serializable> call, String ipAddress, int portNumber) {
+    Client(Consumer < Serializable > call, String ipAddress, int portNumber) {
         callback = call;
-        // change this hard code later! This is just temporary
         theIPAddress = ipAddress;
         thePortNumber = portNumber;
     }
 
     public void run() {
-
+        // Create a client socket
         try {
             socketClient = new Socket(theIPAddress, thePortNumber);
-            out = new ObjectOutputStream(socketClient.getOutputStream());
-            in = new ObjectInputStream(socketClient.getInputStream());
+            out = new ObjectOutputStream(socketClient.getOutputStream()); in = new ObjectInputStream(socketClient.getInputStream());
             socketClient.setTcpNoDelay(true);
-        } catch (Exception e) {
-        }
+        } catch (Exception e) {}
 
         while (true) {
-
+            // Read object and run callback
             try {
-                PokerInfo fromServer = (PokerInfo)in.readObject();
+                PokerInfo fromServer = (PokerInfo) in .readObject();
                 callback.accept(fromServer);
-            } catch (Exception e) {
-            }
+            } catch (Exception e) {}
         }
 
     }
 
     public void send(PokerInfo toServer) {
-        try{
+        // Send information out to the server
+        try {
             out.writeObject(toServer);
         } catch (IOException e) {
             // TODO Auto-generated catch block
