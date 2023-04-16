@@ -1,3 +1,4 @@
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -17,6 +18,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.util.Duration;
 import javafx.util.converter.IntegerStringConverter;
 
 import java.io.FileInputStream;
@@ -86,6 +88,7 @@ public class GUIClient extends Application {
     Button closeNewLookButton;
     boolean gameHasBegun = false;
     boolean havePlacedBets = false;
+    boolean dealerQualified = false;
 
 
     // map of all scenes
@@ -101,6 +104,8 @@ public class GUIClient extends Application {
     Client clientConnection;
     PokerInfo pokerInfo;
 
+    PauseTransition pause = new PauseTransition(Duration.seconds(8));
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -108,7 +113,14 @@ public class GUIClient extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Welcome to Poker");
+
         pokerInfo = new PokerInfo();
+
+        pause.setOnFinished(event -> {
+            primaryStage.setScene(sceneMap.get("endScreen"));  // Switch to the ending scene
+            System.out.println("Done waiting...");
+        });
+
         {
             // initialize welcome components
             gameTitle = new Text("POKER");
@@ -122,7 +134,7 @@ public class GUIClient extends Application {
             // initialize gameplay components
 
             optionButton2 = new Button("OPTIONS");
-            totalWinningInfo = new Text("Total Winnings:\nXXXXX");
+            totalWinningInfo = new Text("Total Winnings:\n$ XXXXX");
             pairPlusNum = new TextField();
             anteWageNum = new TextField();
             playWagerNum = new TextField();
@@ -131,6 +143,8 @@ public class GUIClient extends Application {
             foldButton = new Button("FOLD");
             submitButton = new Button("SUBMIT");
             gamePane = new BorderPane();
+            dealButton.setDisable(true);
+            foldButton.setDisable(true);
 
             // Textfield only accept integers
             TextFormatter<Integer> formatter1 = new TextFormatter<>(new IntegerStringConverter(), 1, c -> Pattern.matches("\\d*", c.getText()) ? c : null);  // copied code from https://stackoverflow.com/a/36749659
@@ -148,8 +162,8 @@ public class GUIClient extends Application {
             closeOptionsButton = new Button("X");
 
             // initialize end components
-            endingText = new Text("WINNER/LOSER YOU HAVE WON/LOST: $ XXXX");
-            endTotalWinningsText = new Text("TOTAL WINNINGS: $XXXX");
+            endingText = new Text("");
+            endTotalWinningsText = new Text("");
             endContinueButton = new Button("Continue");
             endExitButton = new Button("Exit Game");
 
@@ -180,6 +194,16 @@ public class GUIClient extends Application {
             playWagerNum.setAlignment(Pos.CENTER);
             playWagerNum.setDisable(true);
 
+            // disable until client is connected
+            anteWageNum.setDisable(true);
+            pairPlusNum.setDisable(true);
+            dealButton.setDisable(true);
+            foldButton.setDisable(true);
+            submitButton.setDisable(true);
+
+            // until the client reaches to the gameplay
+            freshStartButton.setDisable(true);
+
             // style menu components
             optionsTitle.setStyle("-fx-fill: #FFFFFF;-fx-font: bold 100 Garamond;");
             freshStartButton.setStyle("-fx-background-color: #1F405A; -fx-text-fill: #E6E6E6; -fx-pref-height: 20px; -fx-pref-width: 450px;  -fx-font: bold 24 Calibri; ");
@@ -209,6 +233,68 @@ public class GUIClient extends Application {
                 Platform.runLater(() -> {
                     pokerInfo = (PokerInfo) data;
                     gameInfo.getItems().add("Server: " + pokerInfo.message);
+
+                    if (pokerInfo.hasConnectedToServerFirstTime) {
+                        pairPlusNum.setDisable(false);
+                        anteWageNum.setDisable(false);
+                        submitButton.setDisable(false);
+                        freshStartButton.setDisable(false);
+                        totalWinningInfo.setText("Total Winnings:\n$ 0");
+
+                        pokerInfo.hasConnectedToServerFirstTime = false;
+                    }
+
+                    if (havePlacedBets) {
+                        playerCard1 = changeCard(playerCard1, pokerInfo.playerCards.get(0));
+                        playerCard2 = changeCard(playerCard2, pokerInfo.playerCards.get(1));
+                        playerCard3 = changeCard(playerCard3, pokerInfo.playerCards.get(2));
+                    }
+
+                    if (pokerInfo.message.equals("Showing dealer cards and calculating results...")) {
+                        sceneMap.put("endScreen", createEndScreen());
+                        endScreenHelper();
+                        System.out.println("YEAH WE'RE SHOWING DEALER CARDS HERE");
+                        dealerCard1 = changeCard(dealerCard1, pokerInfo.dealerCards.get(0));
+                        dealerCard2 = changeCard(dealerCard2, pokerInfo.dealerCards.get(1));
+                        dealerCard3 = changeCard(dealerCard3, pokerInfo.dealerCards.get(2));
+
+                        // show results
+                        if (pokerInfo.winner.equals("Dealer Do Not Qualify")) {
+                            gameInfo.getItems().add("Results: The dealer do not have a Queen or higher. So here are your ante bet and play bet money.");
+                        } else if (pokerInfo.winner.equals("Draw")) {
+                            gameInfo.getItems().add("Results: There is a draw. No one wins!");
+                        } else if (pokerInfo.winner.equals("Player")) {
+                            gameInfo.getItems().add("Results: Congratulations! You have won against the dealer.");
+                        } else if (pokerInfo.winner.equals("Dealer")) {
+                            gameInfo.getItems().add("Results: You lost against the dealer. Better luck next time!");
+                        }
+
+                        if (Integer.valueOf(pokerInfo.pairPlusEarnings) > 0) {
+                            gameInfo.getItems().add("You won the Pair Plus!");
+                        } else {
+                            gameInfo.getItems().add("You lost the Pair Plus!");
+                        }
+
+                        totalWinningInfo.setText("Total Winnings:\n$" + String.valueOf(pokerInfo.totalGameMoney));
+
+                    } else if (pokerInfo.message.equals("Game over. Going to win/lose screen...")) {
+                        System.out.println("YOU FOLDED?!?1 OMG");
+                        if (Integer.valueOf(pokerInfo.pairPlusEarnings) > 0) {
+                            gameInfo.getItems().add("You won the Pair Plus!");
+                        } else {
+                            gameInfo.getItems().add("You lost the Pair Plus!");
+                        }
+
+                        endScreenHelper();
+                        totalWinningInfo.setText("Total Winnings:\n$" + String.valueOf(pokerInfo.totalGameMoney));
+                        sceneMap.put("endScreen", createEndScreen());
+                    } else if (pokerInfo.message.equals("No problem! Starting new Game!")) {
+                        System.out.print("You have restarted the game...");
+                        freshStartHelper();
+                        primaryStage.setScene(sceneMap.get("gameplay"));  // Switch to the ending scene
+                    }
+
+
                 });
             }, ipAddressText.getText(), Integer.valueOf(portNumText.getText()));
             clientConnection.start();
@@ -225,7 +311,19 @@ public class GUIClient extends Application {
 
         // menu screen event handlers
         //TODO:WRITE FRESH START EVENT HANDLER
-        exitGameButton.setOnAction(e -> Platform.exit());
+        freshStartButton.setOnAction(e->{
+//            pokerInfo.totalGameMoney = 0;
+//            pokerInfo.roundWinnings = 0;
+            pokerInfo.message = "The client have restarted the game.";
+            clientConnection.send(pokerInfo);
+
+        });
+
+
+        exitGameButton.setOnAction(e -> {
+            Platform.exit();
+            System.exit(0);
+        });
 
         // new-look screen event handlers
         closeNewLookButton.setOnAction(e -> primaryStage.setScene(sceneMap.get("menuScreen")));
@@ -234,7 +332,53 @@ public class GUIClient extends Application {
 
         // end screen event handlers
         //TODO: WRITE CONTINUE BUTTON EVENT HANDLER
-        endExitButton.setOnAction(e -> Platform.exit());
+        endExitButton.setOnAction(e -> {
+            Platform.exit();
+            System.exit(0);
+        });
+
+        endContinueButton.setOnAction(e -> {
+            pokerInfo.message = "I will continue playing";
+            pokerInfo.roundWinnings = 0;
+            clientConnection.send(pokerInfo);
+            havePlacedBets = false;
+
+            pairPlusNum.setDisable(false);
+            submitButton.setDisable(false);
+            pairPlusNum.setText("");
+            playWagerNum.setText("");
+
+            if (pokerInfo.winner.equals("Draw")) {
+                anteWageNum.setDisable(false);
+                anteWageNum.setText("");
+            } else if (pokerInfo.winner.equals("Player")) {
+                anteWageNum.setDisable(false);
+                anteWageNum.setText("");
+            } else if (pokerInfo.winner.equals("Dealer") || pokerInfo.winner.equals("Fold")) {
+                anteWageNum.setDisable(false);
+                anteWageNum.setText("");
+            }
+
+
+            // Change the cards to the back (change based on styles)
+            if (blueModeTurnedOn) {
+                dealerCard1 = changeCard(dealerCard1, "src/main/resources/Cards/back-card1.png");
+                dealerCard2 = changeCard(dealerCard2, "src/main/resources/Cards/back-card1.png");
+                dealerCard3 = changeCard(dealerCard3, "src/main/resources/Cards/back-card1.png");
+                playerCard1 = changeCard(playerCard1, "src/main/resources/Cards/back-card1.png");
+                playerCard2 = changeCard(playerCard2, "src/main/resources/Cards/back-card1.png");
+                playerCard3 = changeCard(playerCard3, "src/main/resources/Cards/back-card1.png");
+            } else {
+                dealerCard1 = changeCard(dealerCard1, "src/main/resources/Cards/back-card2.png");
+                dealerCard2 = changeCard(dealerCard2, "src/main/resources/Cards/back-card2.png");
+                dealerCard3 = changeCard(dealerCard3, "src/main/resources/Cards/back-card2.png");
+                playerCard1 = changeCard(playerCard1, "src/main/resources/Cards/back-card2.png");
+                playerCard2 = changeCard(playerCard2, "src/main/resources/Cards/back-card2.png");
+                playerCard3 = changeCard(playerCard3, "src/main/resources/Cards/back-card2.png");
+            }
+
+            primaryStage.setScene(sceneMap.get("gameplay"));  // Switch to the ending scene
+        });
 
         // TODO: ADD GAME SCREEN EVENT HANDLERS
         // TODO: Write the deal, fold, and submit event handlers
@@ -246,27 +390,45 @@ public class GUIClient extends Application {
                 // everything in here
                 pokerInfo.anteBet = anteBetVal;
                 pokerInfo.pairPlusBet = pairPlusBetVal;
+                pokerInfo.pairPlusBet = pairPlusBetVal;
                 pokerInfo.message = "I have made my bets";
                 havePlacedBets = true;
-                clientConnection.send(pokerInfo);
-
+                clientConnection.send(pokerInfo); // send server info here
                 anteWageNum.setDisable(true);
                 pairPlusNum.setDisable(true);
                 submitButton.setDisable(true);
-            } else if (anteBetVal < 5 || pairPlusBetVal < 5){
+                dealButton.setDisable(false);
+                foldButton.setDisable(false);
+
+                // Change the player cards
+//                System.out.println(pokerInfo.playerCards.get(0).toString());
+            } else if (anteBetVal < 5 || pairPlusBetVal < 5) {
                 gameInfo.getItems().add("You made one of your bets too low. Make sure it's at least $5.");
             } else if (anteBetVal > 25 || pairPlusBetVal > 25) {
                 gameInfo.getItems().add("You made one of your bets too high. Make sure it's at most $25");
             }
+
+
         });
 
         dealButton.setOnAction(e -> {
             pokerInfo.message = "I want to deal!";
             clientConnection.send(pokerInfo);
+            dealButton.setDisable(true);
+            foldButton.setDisable(true);
+            playWagerNum.setText(anteWageNum.getText());
+            pause.play();
+//            primaryStage.setScene(sceneMap.get("endScreen"));
+
         });
         foldButton.setOnAction(e -> {
             pokerInfo.message = "I want to fold!";
             clientConnection.send(pokerInfo);
+            foldButton.setDisable(true);
+            dealButton.setDisable(true);
+            pause.play();
+            playWagerNum.setText("0");
+//            primaryStage.setScene(sceneMap.get("endScreen"));
         });
         optionButton2.setOnAction(e -> primaryStage.setScene(sceneMap.get("menuScreen")));
 
@@ -447,7 +609,6 @@ public class GUIClient extends Application {
 
     Scene createEndScreen() {
         endPane = new BorderPane();
-
         // set up background
         Image hisoka1;
         try {
@@ -462,6 +623,7 @@ public class GUIClient extends Application {
             }
 
 
+//            endPane.setBackground(new Background(new BackgroundImage(hisoka1,
             endPane.setBackground(new Background(new BackgroundImage(hisoka1,
                     BackgroundRepeat.NO_REPEAT,
                     BackgroundRepeat.NO_REPEAT,
@@ -628,5 +790,65 @@ public class GUIClient extends Application {
         gamePane.setStyle("-fx-background-color:" + themeStyle[4] + ";");  // TODO: Change the hexcode such that the new look can be applied
     }
 
+    public void endScreenHelper() {
+        endTotalWinningsText.setText("TOTAL WINNINGS:\n$ " + String.valueOf(pokerInfo.totalGameMoney));
 
+        System.out.println("This is winner:" + pokerInfo.winner);
+        System.out.println("This is the server message:" + pokerInfo.message);
+
+        if (pokerInfo.winner.equals("Dealer Do Not Qualify")) {
+            wonCurrentGame = false;
+            endingText.setText("DEALER DID NOT QUALIFY! YOU HAVE EARNED:\n$" + pokerInfo.roundWinnings);
+        } else if (pokerInfo.winner.equals("Draw")) {
+            wonCurrentGame = false;
+            endingText.setText("IT'S A TIE! YOU HAVE EARNED:\n$" + pokerInfo.roundWinnings);
+//            anteWageNum.setDisable(false);
+//            anteWageNum.setText("");
+        } else if (pokerInfo.winner.equals("Player")) {
+            wonCurrentGame = false;
+            endingText.setText("CONGRATULATIONS WINNER! YOU HAVE EARNED:\n$" + pokerInfo.roundWinnings);
+//            anteWageNum.setDisable(false);
+//            anteWageNum.setText("");
+        } else if (pokerInfo.winner.equals("Dealer") || pokerInfo.winner.equals("Fold")) {
+            System.out.println("YO YOU LOST OR FOLDED! WHY??");
+            wonCurrentGame = false;
+            endingText.setText("BETTER LUCK NEXT TIME LOSER! YOU HAVE EARNED:\n$" + pokerInfo.roundWinnings);
+//            anteWageNum.setDisable(false);
+//            anteWageNum.setText("");
+        }
+    }
+
+
+    public void freshStartHelper(){
+        havePlacedBets = false;
+        pairPlusNum.setDisable(false);
+        anteWageNum.setDisable(false);
+        submitButton.setDisable(false);
+        dealButton.setDisable(true);
+        foldButton.setDisable(true);
+        pairPlusNum.setText("");
+        playWagerNum.setText("");
+        anteWageNum.setText("");
+        totalWinningInfo.setText("Total Winnings:\n$ 0");
+
+        // Change the cards to the back (change based on styles)
+        if (blueModeTurnedOn) {
+            dealerCard1 = changeCard(dealerCard1, "src/main/resources/Cards/back-card1.png");
+            dealerCard2 = changeCard(dealerCard2, "src/main/resources/Cards/back-card1.png");
+            dealerCard3 = changeCard(dealerCard3, "src/main/resources/Cards/back-card1.png");
+            playerCard1 = changeCard(playerCard1, "src/main/resources/Cards/back-card1.png");
+            playerCard2 = changeCard(playerCard2, "src/main/resources/Cards/back-card1.png");
+            playerCard3 = changeCard(playerCard3, "src/main/resources/Cards/back-card1.png");
+        } else {
+            dealerCard1 = changeCard(dealerCard1, "src/main/resources/Cards/back-card2.png");
+            dealerCard2 = changeCard(dealerCard2, "src/main/resources/Cards/back-card2.png");
+            dealerCard3 = changeCard(dealerCard3, "src/main/resources/Cards/back-card2.png");
+            playerCard1 = changeCard(playerCard1, "src/main/resources/Cards/back-card2.png");
+            playerCard2 = changeCard(playerCard2, "src/main/resources/Cards/back-card2.png");
+            playerCard3 = changeCard(playerCard3, "src/main/resources/Cards/back-card2.png");
+        }
+
+
+    }
 }
+

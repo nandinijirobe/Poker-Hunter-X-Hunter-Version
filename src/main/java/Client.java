@@ -18,8 +18,8 @@ public class Client extends Thread {
     Client(Consumer<Serializable> call, String ipAddress, int portNumber) {
         callback = call;
         // change this hard code later! This is just temporary
-        theIPAddress = "127.0.0.1";
-        thePortNumber = 5555;
+        theIPAddress = ipAddress;
+        thePortNumber = portNumber;
     }
 
     public void run() {

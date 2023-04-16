@@ -2,15 +2,19 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class PokerInfo implements Serializable {
-    int clientNum;
-    int anteBet;
-    int pairPlusBet;
-    int playBet;
+    int anteBet = 0;
+    int pairPlusBet = 0;
+    int pairPlusEarnings = 0;
     ArrayList<String> dealerCards;
     ArrayList<String> playerCards;
-    String dealOrFold;
-    int totalGameMoney;
-    int roundWinnings;
-    boolean playGameAgain;
-    String message;
+    int totalGameMoney = 0;
+    int roundWinnings = 0;
+    String winner = "";
+    String message = "";
+    boolean hasConnectedToServerFirstTime = false;
+
+    public PokerInfo() {
+        dealerCards = new ArrayList<String>(3);
+        playerCards = new ArrayList<String>(3);
+    }
 }
