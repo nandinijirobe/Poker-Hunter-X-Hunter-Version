@@ -112,7 +112,7 @@ public class GUIClient extends Application {
     boolean blueModeTurnedOn = true;
     Client clientConnection;
     PokerInfo pokerInfo;
-    PauseTransition pause = new PauseTransition(Duration.seconds(10));
+    PauseTransition pause = new PauseTransition(Duration.seconds(12));
 
     public static void main(String[] args) {
         launch(args);
