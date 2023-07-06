@@ -1,3 +1,10 @@
+# 🎰💵 Lotto Simulator 🎲🤩
+## Overview
+In this project, we have implemented a networked version of the popular casino game 3 Card Poker using Java programming. The game utilizes event-driven programming and networking with Java Sockets. We designed the user interface (UI) using JavaFX. Our implementation not only allows up to four players to simultaneously log on to the server and participate in the game but also provides a visually appealing and interactive UI for an enhanced gaming experience.
+
+## Project Images
+Here are some visuals showcasing our project.
+
 <p align="center">
   <img src="https://github.com/nandinijirobe/Poker-Game-Client/assets/95235229/e7673a53-7497-4839-9da9-8583d68e40e8" alt="Screenshot 1" style="width: 45%; margin: 5px;">
   <img src="https://github.com/nandinijirobe/Poker-Game-Client/assets/95235229/6c79c35b-67f8-4628-aa64-307375b82e9e" alt="Screenshot 7" style="width: 45%; margin: 5px;">
