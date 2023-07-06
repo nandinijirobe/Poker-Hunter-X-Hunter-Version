@@ -1,4 +1,4 @@
-# 🃏♦️♠️ Poker (Hunter X Hunter Ver) ♣️♥️👑
+# 🃏♦️♠️ Poker (Hunter X Hunter Version) ♣️♥️👑
 
 
 ## Overview
